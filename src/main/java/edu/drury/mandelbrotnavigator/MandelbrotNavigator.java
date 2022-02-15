@@ -430,28 +430,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		}
 
 		/* Serialized Bookmarks */ {
-			try {
-				FileInputStream fis = new FileInputStream("bookmarks.ser");
-				ObjectInputStream ois = new ObjectInputStream(fis);
-
-				ArrayList<String> bookmarksNameArrayList = new ArrayList<>();
-
-				while (fis.available() != 0) {
-					Bookmark bookmark = (Bookmark) ois.readObject();
-					bookmarks.add(bookmark);
-					bookmarksNameArrayList.add(bookmark.name);
-				}
-
-				String[] bookmarksNameArray = new String[bookmarksNameArrayList.size()];
-
-				for (int i = 0; i < bookmarksNameArrayList.size(); i++) {
-					bookmarksNameArray[i] = bookmarksNameArrayList.get(i);
-				}
-
-				bookmarksList.setListData(bookmarksNameArray);
-			} catch (IOException | ClassNotFoundException e) {
-				e.printStackTrace();
-			}
+			setJListFromIO();
 		}
 
 		/* Export Panel */ {
@@ -509,10 +488,12 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			generationFieldLimit.setValue(limit);
 			panelMain.repaint();
 		} else if (e.getActionCommand().equals("bookmarksSave")) {
-			Bookmark bookmark = new Bookmark("Untitled", x, y, scale);
-			addBookmark(bookmark);
+			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+			bookmarks.add(new Bookmark("Untitled", x, y, scale));
+			setBookmarksIO(bookmarks);
+			setJListFromIO();
 		} else if (e.getActionCommand().equals("bookmarksGoTo")) {
-			for (Bookmark bookmark : bookmarks) {
+			for (Bookmark bookmark : getBookmarksFromIO()) {
 				if (bookmarksList.getSelectedValue().equals(bookmark.name)) {
 					x = bookmark.x;
 					y = bookmark.y;
@@ -524,11 +505,10 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				}
 			}
 		} else if (e.getActionCommand().equals("bookmarksRemove")) {
-			for (Bookmark bookmark : bookmarks) {
-				if (bookmarksList.getSelectedValue().equals(bookmark.name)) {
-					removeBookmark(bookmark.name);
-				}
-			}
+			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+			bookmarks.removeIf(bookmark -> bookmark.name.equals(bookmarksList.getSelectedValue()));
+			setBookmarksIO(bookmarks);
+			setJListFromIO();
 		}
 	}
 
@@ -572,33 +552,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		cycles = Math.min((int) (1 / scale * 500), 1000);
 	}
 
-	private void addBookmark(Bookmark bookmark) {
-		try {
-			FileOutputStream fos = new FileOutputStream("bookmarks.ser");
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			oos.writeObject(bookmark);
-			bookmarks.add(bookmark);
-			updateBookmarksList();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void updateBookmarksList() {
-		String[] bookmarksNameArray = new String[bookmarks.size()];
-
-		for (int i = 0; i < bookmarks.size(); i++) {
-			bookmarksNameArray[i] = bookmarks.get(i).name;
-		}
-
-		bookmarksList.setListData(bookmarksNameArray);
-	}
-
-	private void removeBookmark(String name) {
-		bookmarks.removeIf(bookmark -> bookmark.name.equals(name));
-		updateBookmarksList();
-	}
-
 	/*
 	Bookmarking process:
 
@@ -616,12 +569,55 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		reset ser from array
 
 	methods needed:
-	* get or create or set array from ser
-	* set JSlit from array
-	* reset ser from array
-	* add bookmark to array
-	* remove bookmark from array
+	+ get or create or set array from ser
+	+ set JList from array
+	+ reset ser from array
+	+ add bookmark to array
+	+ remove bookmark from array
 	 */
+
+	private ArrayList<Bookmark> getBookmarksFromIO() {
+		ArrayList<Bookmark> bookmarks = new ArrayList<>();
+
+		try {
+			FileInputStream fis = new FileInputStream("bookmarks.ser");
+			ObjectInputStream ois = new ObjectInputStream(fis);
+
+			while (fis.available() != 0) {
+				bookmarks.add((Bookmark) ois.readObject());
+			}
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		return bookmarks;
+	}
+
+	private void setJListFromIO() {
+		ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+
+		String[] bookmarksNames = new String[bookmarks.size()];
+
+		for (int i = 0; i < bookmarks.size(); i++) {
+			bookmarksNames[i] = bookmarks.get(i).name;
+		}
+
+		bookmarksList.setListData(bookmarksNames);
+	}
+
+	private void setBookmarksIO(ArrayList<Bookmark> bookmarks) {
+		try {
+			FileOutputStream fos = new FileOutputStream("bookmarks.ser");
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			oos.reset();
+
+			for (Bookmark bookmark : bookmarks) {
+				oos.writeObject(bookmark);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void main(String[] args) {
 		new MandelbrotNavigator();
