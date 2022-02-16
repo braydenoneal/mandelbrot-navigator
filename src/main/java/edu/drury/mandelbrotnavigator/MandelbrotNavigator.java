@@ -17,12 +17,13 @@ import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class MandelbrotNavigator implements ActionListener, PropertyChangeListener, ListSelectionListener {
 	private static final double DEFAULT_X = -0.5;
 	private static final double DEFAULT_Y = 0;
 	private static final double DEFAULT_SCALE = 2.75;
-	private static final int DEFAULT_CYCLES = Math.min((int) (1 / DEFAULT_SCALE * 500), 1000);
+	private static final int DEFAULT_CYCLES = getCycles(DEFAULT_SCALE);
 	private static final double DEFAULT_LIMIT = 2.0;
 
 	private double scale = DEFAULT_SCALE;
@@ -30,8 +31,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private double y = DEFAULT_Y;
 	private int cycles = DEFAULT_CYCLES;
 	private double limit = DEFAULT_LIMIT;
-
-	private final ArrayList<Bookmark> bookmarks = new ArrayList<>();
 
 	// Level 0 in container hierarchy
 	private final JFrame frame = new JFrame();
@@ -72,9 +71,11 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private final JButton generationButtonReset = new JButton();
 	// - Bookmarks
 	private final JButton bookmarksButtonSave = new JButton();
-	private final JList<String> bookmarksList = new JList<>();
 	private final JButton bookmarksButtonGoTo = new JButton();
-	private final JButton bookmarksButtonRemove = new JButton();
+	private final JButton bookmarksButtonDelete = new JButton();
+	private final JButton bookmarksButtonRename = new JButton();
+
+	private final JList<Bookmark> bookmarksList = new JList<>();
 	// - Export
 	private final JButton exportButtonSave = new JButton();
 
@@ -145,6 +146,19 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		public String toString() {
 			return "Bookmark{" + "name='" + name + '\'' + ", x=" + x + ", y=" + y + ", scale=" + scale + '}';
 		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Bookmark bookmark = (Bookmark) o;
+			return Double.compare(bookmark.x, x) == 0 && Double.compare(bookmark.y, y) == 0 && Double.compare(bookmark.scale, scale) == 0 && Objects.equals(name, bookmark.name);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, x, y, scale);
+		}
 	}
 
 	private MandelbrotNavigator() {
@@ -172,8 +186,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			scrollPane.setBorder(BorderFactory.createEmptyBorder());
 			scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		}
-
-		/* Main Panel */ {}
 
 		/* Side Panel */ {
 			panelSide.setLayout(new GridBagLayout());
@@ -385,7 +397,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 		/* Bookmarks Panel */ {
 			panelBookmarks.setLayout(new GridBagLayout());
-			panelBookmarks.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Bookmarks"));
+			panelBookmarks.setBorder(BorderFactory.createTitledBorder(
+					BorderFactory.createEtchedBorder(), "Bookmarks"));
 
 			bookmarksButtonSave.setText("Save position");
 			bookmarksButtonSave.setActionCommand("bookmarksSave");
@@ -393,16 +406,34 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 			bookmarksList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			bookmarksList.addListSelectionListener(this);
+			bookmarksList.setCellRenderer(new DefaultListCellRenderer() {
+				@Override
+				public Component getListCellRendererComponent(
+						JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+					Component renderer = super.getListCellRendererComponent(
+							list, value, index, isSelected, cellHasFocus);
+					if (renderer instanceof JLabel && value instanceof Bookmark) {
+						((JLabel) renderer).setText(((Bookmark) value).name);
+					}
+					return renderer;
+				}
+			});
+			bookmarksList.setFixedCellWidth(bookmarksList.getWidth());
 
 			bookmarksButtonGoTo.setText("Go to");
 			bookmarksButtonGoTo.setEnabled(false);
 			bookmarksButtonGoTo.setActionCommand("bookmarksGoTo");
 			bookmarksButtonGoTo.addActionListener(this);
 
-			bookmarksButtonRemove.setText("Remove");
-			bookmarksButtonRemove.setEnabled(false);
-			bookmarksButtonRemove.setActionCommand("bookmarksRemove");
-			bookmarksButtonRemove.addActionListener(this);
+			bookmarksButtonDelete.setText("Delete");
+			bookmarksButtonDelete.setEnabled(false);
+			bookmarksButtonDelete.setActionCommand("bookmarksDelete");
+			bookmarksButtonDelete.addActionListener(this);
+
+			bookmarksButtonRename.setText("Rename");
+			bookmarksButtonRename.setEnabled(false);
+			bookmarksButtonRename.setActionCommand("bookmarksRename");
+			bookmarksButtonRename.addActionListener(this);
 
 			GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
@@ -419,14 +450,18 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 			panelBookmarks.add(bookmarksList, gridBagConstraints);
 
-			gridBagConstraints.gridwidth = 1;
 			gridBagConstraints.gridy++;
 
 			panelBookmarks.add(bookmarksButtonGoTo, gridBagConstraints);
 
+			gridBagConstraints.gridy++;
+			gridBagConstraints.gridwidth = 1;
+
+			panelBookmarks.add(bookmarksButtonRename, gridBagConstraints);
+
 			gridBagConstraints.gridx = 1;
 
-			panelBookmarks.add(bookmarksButtonRemove, gridBagConstraints);
+			panelBookmarks.add(bookmarksButtonDelete, gridBagConstraints);
 		}
 
 		/* Serialized Bookmarks */ {
@@ -459,6 +494,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+		// Position
 		if (e.getActionCommand().equals("positionZoomIn")) {
 			scale *= 0.8;
 			setCycles();
@@ -481,20 +517,27 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			positionFieldY.setValue(y);
 			generationFieldCycles.setValue(cycles);
 			panelMain.repaint();
-		} else if (e.getActionCommand().equals("generationReset")) {
-			cycles = DEFAULT_CYCLES;
+		}
+		// Generation
+		else if (e.getActionCommand().equals("generationReset")) {
 			limit = DEFAULT_LIMIT;
-			generationFieldCycles.setValue(cycles);
 			generationFieldLimit.setValue(limit);
 			panelMain.repaint();
-		} else if (e.getActionCommand().equals("bookmarksSave")) {
-			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
-			bookmarks.add(new Bookmark("Untitled", x, y, scale));
-			setBookmarksIO(bookmarks);
-			setJListFromIO();
+		}
+		// Bookmarks
+		else if (e.getActionCommand().equals("bookmarksSave")) {
+			String bookmarkName = (String) JOptionPane.showInputDialog(frame, "Enter a name for the bookmark.",
+					"New Bookmark", JOptionPane.QUESTION_MESSAGE, null, null,
+					(x + ", " + y + ", " + scale));
+			if (bookmarkName != null && !bookmarkName.equals("")) {
+				ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+				bookmarks.add(new Bookmark(bookmarkName, x, y, scale));
+				setBookmarksIO(bookmarks);
+				setJListFromIO();
+			}
 		} else if (e.getActionCommand().equals("bookmarksGoTo")) {
 			for (Bookmark bookmark : getBookmarksFromIO()) {
-				if (bookmarksList.getSelectedValue().equals(bookmark.name)) {
+				if (bookmarksList.getSelectedValue().equals(bookmark)) {
 					x = bookmark.x;
 					y = bookmark.y;
 					scale = bookmark.scale;
@@ -504,9 +547,27 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 					panelMain.repaint();
 				}
 			}
-		} else if (e.getActionCommand().equals("bookmarksRemove")) {
+		} else if (e.getActionCommand().equals("bookmarksRename")) {
 			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
-			bookmarks.removeIf(bookmark -> bookmark.name.equals(bookmarksList.getSelectedValue()));
+			Bookmark selected = bookmarksList.getSelectedValue();
+
+			for (Bookmark bookmark : bookmarks) {
+				if (bookmark.equals(selected)) {
+					String bookmarkName = (String) JOptionPane.showInputDialog(frame, "Enter a new name for the bookmark.",
+							"Rename Bookmark", JOptionPane.QUESTION_MESSAGE, null, null,
+							selected.name);
+					if (bookmarkName != null && !bookmarkName.equals("")) {
+						int index = bookmarks.indexOf(bookmark);
+						bookmarks.remove(bookmark);
+						bookmarks.add(index, new Bookmark(bookmarkName, selected.x, selected.y, selected.scale));
+						setBookmarksIO(bookmarks);
+						setJListFromIO();
+					}
+				}
+			}
+		} else if (e.getActionCommand().equals("bookmarksDelete")) {
+			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+			bookmarks.removeIf(bookmark -> bookmark.equals(bookmarksList.getSelectedValue()));
 			setBookmarksIO(bookmarks);
 			setJListFromIO();
 		}
@@ -515,6 +576,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	@Override
 	public void propertyChange(PropertyChangeEvent e) {
 		Object source = e.getSource();
+		// Position
 		if (source == positionFieldX) {
 			x = ((Number) positionFieldX.getValue()).doubleValue();
 			panelMain.repaint();
@@ -526,7 +588,9 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			setCycles();
 			generationFieldCycles.setValue(cycles);
 			panelMain.repaint();
-		} else if (source == generationFieldLimit) {
+		}
+		// Generation
+		else if (source == generationFieldLimit) {
 			limit = ((Number) generationFieldLimit.getValue()).doubleValue();
 			panelMain.repaint();
 		} else if (source == generationFieldCycles) {
@@ -540,41 +604,15 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		if (!e.getValueIsAdjusting()) {
 			if (bookmarksList.getSelectedIndex() == -1) {
 				bookmarksButtonGoTo.setEnabled(false);
-				bookmarksButtonRemove.setEnabled(false);
+				bookmarksButtonDelete.setEnabled(false);
+				bookmarksButtonRename.setEnabled(false);
 			} else {
 				bookmarksButtonGoTo.setEnabled(true);
-				bookmarksButtonRemove.setEnabled(true);
+				bookmarksButtonDelete.setEnabled(true);
+				bookmarksButtonRename.setEnabled(true);
 			}
 		}
 	}
-
-	private void setCycles() {
-		cycles = Math.min((int) (1 / scale * 500), 1000);
-	}
-
-	/*
-	Bookmarking process:
-
-	get bookmarks from ser and place in array
-	set JList from array
-
-	add:
-		add bookmark to array
-		set JList from array
-		reset ser from array
-
-	remove:
-		remove bookmark from array
-		set JList from array
-		reset ser from array
-
-	methods needed:
-	+ get or create or set array from ser
-	+ set JList from array
-	+ reset ser from array
-	+ add bookmark to array
-	+ remove bookmark from array
-	 */
 
 	private ArrayList<Bookmark> getBookmarksFromIO() {
 		ArrayList<Bookmark> bookmarks = new ArrayList<>();
@@ -595,14 +633,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 	private void setJListFromIO() {
 		ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
-
-		String[] bookmarksNames = new String[bookmarks.size()];
-
-		for (int i = 0; i < bookmarks.size(); i++) {
-			bookmarksNames[i] = bookmarks.get(i).name;
-		}
-
-		bookmarksList.setListData(bookmarksNames);
+		Bookmark[] bookmarksArray = bookmarks.toArray(new Bookmark[0]);
+		bookmarksList.setListData(bookmarksArray);
 	}
 
 	private void setBookmarksIO(ArrayList<Bookmark> bookmarks) {
@@ -617,6 +649,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void setCycles() {
+		cycles = getCycles(scale);
+	}
+
+	private static int getCycles(double scale) {
+		return Math.min((int) (1 / scale * 500), 1000);
 	}
 
 	public static void main(String[] args) {
