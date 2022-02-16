@@ -3,9 +3,11 @@ package edu.drury.mandelbrotnavigator;
 import edu.drury.mandelbrotnavigator.color.Fire;
 import edu.drury.mandelbrotnavigator.math.MandelbrotMath;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
@@ -126,6 +128,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		public void repaint() {
 			row = 0;
 			super.repaint();
+		}
+
+		public void exportPNG(String path) {
+			try {
+				ImageIO.write(image, "png", new File(path));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -473,6 +483,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			panelExport.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Export"));
 
 			exportButtonSave.setText("Save as PNG");
+			exportButtonSave.addActionListener(this);
+			exportButtonSave.setActionCommand("exportSave");
 
 			GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
@@ -573,6 +585,23 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				bookmarks.removeIf(bookmark -> bookmark.equals(bookmarksList.getSelectedValue()));
 				setBookmarksIO(bookmarks);
 				setJListFromIO();
+			}
+		}
+		// Export
+		else if (e.getActionCommand().equals("exportSave")) {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileNameExtensionFilter("PNG", "png"));
+			fileChooser.setAcceptAllFileFilterUsed(false);
+			fileChooser.setCurrentDirectory(new File("./exports"));
+			int option = fileChooser.showSaveDialog(frame);
+			String path = fileChooser.getSelectedFile().getPath();
+			String name = fileChooser.getSelectedFile().getName();
+			if (!name.endsWith(".png")) {
+				name += ".png";
+				path += ".png";
+			}
+			if (option == JFileChooser.APPROVE_OPTION && !name.equals(".png")) {
+				panelMain.exportPNG(path);
 			}
 		}
 	}
