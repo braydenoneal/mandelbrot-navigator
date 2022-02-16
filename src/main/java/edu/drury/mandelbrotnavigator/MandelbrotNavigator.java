@@ -32,7 +32,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private int cycles = DEFAULT_CYCLES;
 	private double limit = DEFAULT_LIMIT;
 
-	// Level 0 in container hierarchy
+	// Level 0
 	private final JFrame frame = new JFrame();
 	// Level 1
 	private final JPanel panelContent = new JPanel();
@@ -566,10 +566,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				}
 			}
 		} else if (e.getActionCommand().equals("bookmarksDelete")) {
-			ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
-			bookmarks.removeIf(bookmark -> bookmark.equals(bookmarksList.getSelectedValue()));
-			setBookmarksIO(bookmarks);
-			setJListFromIO();
+			int option = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete the bookmark?",
+					"Delete Bookmark", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (option == JOptionPane.OK_OPTION) {
+				ArrayList<Bookmark> bookmarks = getBookmarksFromIO();
+				bookmarks.removeIf(bookmark -> bookmark.equals(bookmarksList.getSelectedValue()));
+				setBookmarksIO(bookmarks);
+				setJListFromIO();
+			}
 		}
 	}
 
@@ -660,6 +664,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	}
 
 	public static void main(String[] args) {
-		new MandelbrotNavigator();
+//		System.setProperty("sun.java2d.uiScale", "1");
+		SwingUtilities.invokeLater(MandelbrotNavigator::new);
 	}
 }
