@@ -592,16 +592,23 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			JFileChooser fileChooser = new JFileChooser();
 			fileChooser.setFileFilter(new FileNameExtensionFilter("PNG", "png"));
 			fileChooser.setAcceptAllFileFilterUsed(false);
-			fileChooser.setCurrentDirectory(new File("./exports"));
-			int option = fileChooser.showSaveDialog(frame);
-			String path = fileChooser.getSelectedFile().getPath();
-			String name = fileChooser.getSelectedFile().getName();
-			if (!name.endsWith(".png")) {
-				name += ".png";
-				path += ".png";
+			File exportsDir = new File("./exports");
+			boolean exportsDirExists = exportsDir.exists();
+			if (!exportsDirExists) {
+				exportsDirExists = exportsDir.mkdir();
 			}
-			if (option == JFileChooser.APPROVE_OPTION && !name.equals(".png")) {
-				panelMain.exportPNG(path);
+			if (exportsDirExists) {
+				fileChooser.setCurrentDirectory(new File("./exports"));
+				int option = fileChooser.showSaveDialog(frame);
+				String path = fileChooser.getSelectedFile().getPath();
+				String name = fileChooser.getSelectedFile().getName();
+				if (!name.endsWith(".png")) {
+					name += ".png";
+					path += ".png";
+				}
+				if (option == JFileChooser.APPROVE_OPTION && !name.equals(".png")) {
+					panelMain.exportPNG(path);
+				}
 			}
 		}
 	}
