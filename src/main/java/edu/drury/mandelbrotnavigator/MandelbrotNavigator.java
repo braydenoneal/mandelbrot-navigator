@@ -704,7 +704,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	}
 
 	public static void main(String[] args) {
-//		System.setProperty("sun.java2d.uiScale", "1");
+		try {
+			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+		} catch (ClassNotFoundException
+				| UnsupportedLookAndFeelException
+				| IllegalAccessException
+				| InstantiationException e) {
+			e.printStackTrace();
+		}
 		SwingUtilities.invokeLater(MandelbrotNavigator::new);
 	}
 }
