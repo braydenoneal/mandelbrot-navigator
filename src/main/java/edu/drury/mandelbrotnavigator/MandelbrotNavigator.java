@@ -657,15 +657,19 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private ArrayList<Bookmark> getBookmarksFromIO() {
 		ArrayList<Bookmark> bookmarks = new ArrayList<>();
 
-		try {
-			FileInputStream fis = new FileInputStream("bookmarks.ser");
-			ObjectInputStream ois = new ObjectInputStream(fis);
+		File bookmarksFile = new File("./bookmarks.ser");
 
-			while (fis.available() != 0) {
-				bookmarks.add((Bookmark) ois.readObject());
+		if (bookmarksFile.exists() && !bookmarksFile.isDirectory()) {
+			try {
+				FileInputStream fis = new FileInputStream("bookmarks.ser");
+				ObjectInputStream ois = new ObjectInputStream(fis);
+
+				while (fis.available() != 0) {
+					bookmarks.add((Bookmark) ois.readObject());
+				}
+			} catch (IOException | ClassNotFoundException e) {
+				e.printStackTrace();
 			}
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
 		}
 
 		return bookmarks;
