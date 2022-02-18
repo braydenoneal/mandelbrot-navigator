@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class MandelbrotNavigator implements ActionListener, PropertyChangeListener, ListSelectionListener {
 	private static final double DEFAULT_X = -0.5;
@@ -106,31 +107,18 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			top = y + scale / 2;
 			step = scale / height;
 
-			int[][] rgbArray = IntStream.range(0, height)
-					.parallel()
-					.mapToObj(this::getRGBRowArray)
-					.toArray(int[][]::new);
-
-			for (int y = 0; y < height; y++) {
-				for (int x = 0; x < width; x++) {
-					image.setRGB(x, y, rgbArray[y][x]);
-				}
-			}
+			IntStream.range(0, height).parallel().forEach(this::getRGBRowArray);
 
 			g.drawImage(image, 0, 0, null);
 		}
 
-		int[] getRGBRowArray(int y) {
-			int[] row = new int[width];
-
+		void getRGBRowArray(int y) {
 			for (int x = 0; x < width; x++) {
 				int value = MandelbrotMath.getMandelbrotValue(
 						left + x * step, top - y * step, cycles, limit);
 				int[] rgb = Fire.getColor(value, cycles);
-				row[x] = new Color(rgb[0], rgb[1], rgb[2]).getRGB();
+				image.setRGB(x, y, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
 			}
-
-			return row;
 		}
 
 		@Override
@@ -145,40 +133,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-	}
-
-	private class ScreenSectionDrawer extends RecursiveTask<int[][]> {
-		int startY;
-		int height;
-		int width;
-		double left;
-		double top;
-		double step;
-
-		public ScreenSectionDrawer(int startY, int height, int width, double left, double top, double step) {
-			this.startY = startY;
-			this.height = height;
-			this.width = width;
-			this.left = left;
-			this.top = top;
-			this.step = step;
-		}
-
-		@Override
-		protected int[][] compute() {
-			int[][] rgbArray = new int[width][height];
-
-			for (int y = startY; y < height; y++) {
-				for (int x = 0; x < width; x++) {
-					int value = MandelbrotMath.getMandelbrotValue(
-							left + x * step, top - y * step, cycles, limit);
-					int[] rgb = Fire.getColor(value, cycles);
-					rgbArray[x][y] = new Color(rgb[0], rgb[1], rgb[2]).getRGB();
-				}
-			}
-
-			return rgbArray;
 		}
 	}
 
