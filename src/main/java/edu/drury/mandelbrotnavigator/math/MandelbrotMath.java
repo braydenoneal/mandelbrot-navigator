@@ -1,13 +1,11 @@
 package edu.drury.mandelbrotnavigator.math;
 
 public class MandelbrotMath {
-	private static final double LIMIT = 4.0;
-
 	/** Prevent creating instances. */
 	private MandelbrotMath() {}
 
 	public static int getMandelbrotValue(double a, double b, int cycles, double limit) {
-		limit *= limit;
+		double limitSquared = limit * limit;
 		double x = a;
 		double y = b;
 
@@ -15,7 +13,7 @@ public class MandelbrotMath {
 			double px = x;
 			x = px * px - y * y + a;
 			y = (px + px) * y + b;
-			if (x * x + y * y > limit) {
+			if (x * x + y * y > limitSquared) {
 				return i;
 			}
 		}
