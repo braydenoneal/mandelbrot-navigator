@@ -424,7 +424,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		private double top = 0;
 		private double step = 0;
 
-		private final int numPasses = 16;
+		private final int numPasses = 1;
 		private int pass = numPasses;
 
 		@Override
@@ -439,40 +439,38 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			top = y + scale / 2;
 			step = scale / height;
 
-			IntStream.range(0, height / pass).parallel().forEach(this::paintScaledRow);
+			IntStream.range(0, height / pass).parallel().forEach(y -> paintRow(y, g));
 
 			g.drawImage(image, 0, 0, null);
 
 			if (pass > 1) {
-				step *= pass;
 				pass--;
-				repaint();
+				super.repaint();
 			} else {
 				pass = numPasses;
 			}
 		}
 
-		void paintRow(int y) {
-			for (int x = 0; x < width; x++) {
-				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
-				int[] rgb = Fire.getColor(value, cycles);
-				image.setRGB(x, y, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
-			}
-		}
-
-		void paintScaledRow(int y) {
+		void paintRow(int y, Graphics g) {
 			for (int x = 0; x < width; x += pass) {
-				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
+				int value = MandelbrotMath.getMandelbrotValue(left + x * step + pass / 2.0 * step,
+						top - y * pass * step - pass / 2.0 * step, cycles, limit);
 				int[] rgb = Fire.getColor(value, cycles);
 
 				for (int py = 0; py < pass; py++) {
 					for (int px = 0; px < pass; px++) {
-						if (x + px < width && y + py < height) {
-							image.setRGB(x + px, y + py, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
+						if (x + px < width && y * pass + py < height) {
+							image.setRGB(x + px, y * pass + py, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
 						}
 					}
 				}
 			}
+		}
+
+		@Override
+		public void repaint() {
+			pass = numPasses;
+			super.repaint();
 		}
 
 		public void exportPNG(String path) {
