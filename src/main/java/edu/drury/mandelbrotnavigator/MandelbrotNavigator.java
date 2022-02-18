@@ -11,8 +11,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -106,6 +105,45 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			scrollPane.setPreferredSize(new Dimension(256, -1));
 			scrollPane.setBorder(BorderFactory.createEmptyBorder());
 			scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		}
+
+		/* Main Panel */ {
+			panelMain.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mousePressed(MouseEvent e) {
+					super.mousePressed(e);
+					if (e.getButton() == 1) {
+						// TODO: Create shape or whatever
+						System.out.println("Zoom shape: " + e.getButton());
+					} else if (e.getButton() < 4) {
+						// TODO: Move position around cursor
+						System.out.println("Move position: " + e.getButton());
+					}
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent e) {
+					super.mouseReleased(e);
+					System.out.println("Mouse Released");
+				}
+			});
+
+			panelMain.addMouseWheelListener(new MouseAdapter() {
+				@Override
+				public void mouseWheelMoved(MouseWheelEvent e) {
+					super.mouseWheelMoved(e);
+					// TODO: Create zoom in/out method to use in mouse wheel and button actions
+					if (e.getWheelRotation() > 0) {
+						scale *= 1.25;
+					} else {
+						scale *= 0.8;
+					}
+					setCycles();
+					positionFieldScale.setValue(scale);
+					generationFieldCycles.setValue(cycles);
+					panelMain.repaint();
+				}
+			});
 		}
 
 		/* Side Panel */ {
