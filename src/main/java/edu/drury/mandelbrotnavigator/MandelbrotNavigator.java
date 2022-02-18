@@ -19,12 +19,8 @@ import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveTask;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class MandelbrotNavigator implements ActionListener, PropertyChangeListener, ListSelectionListener {
 	private static final double DEFAULT_X = -0.5;
@@ -87,7 +83,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private final JButton exportButtonSave = new JButton();
 
 	private class MainPanel extends JPanel {
-		private int row = 0;
 		private BufferedImage image;
 		private int width = 0;
 		private int height = 0;
@@ -107,24 +102,18 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			top = y + scale / 2;
 			step = scale / height;
 
-			IntStream.range(0, height).parallel().forEach(this::getRGBRowArray);
+			IntStream.range(0, height).parallel().forEach(this::paintRow);
 
 			g.drawImage(image, 0, 0, null);
 		}
 
-		void getRGBRowArray(int y) {
+		void paintRow(int y) {
 			for (int x = 0; x < width; x++) {
 				int value = MandelbrotMath.getMandelbrotValue(
 						left + x * step, top - y * step, cycles, limit);
 				int[] rgb = Fire.getColor(value, cycles);
 				image.setRGB(x, y, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
 			}
-		}
-
-		@Override
-		public void repaint() {
-			row = 0;
-			super.repaint();
 		}
 
 		public void exportPNG(String path) {
