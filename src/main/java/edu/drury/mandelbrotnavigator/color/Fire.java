@@ -23,7 +23,14 @@ public class Fire {
 			new Color(191, 0, 255),
 			new Color(255, 0, 0)
 	};
-	private static final Color[] COLORS = FIRE;
+	private static final Color[] DEFAULT = {
+			new Color(0, 0, 143),
+			new Color(180, 180, 0),
+			new Color(255, 255, 0),
+			new Color(255, 0, 144),
+			new Color(0, 229, 30)
+	};
+	private static final Color[] COLORS = DEFAULT;
 
 	/** Prevent creating instances. */
 	private Fire() {}

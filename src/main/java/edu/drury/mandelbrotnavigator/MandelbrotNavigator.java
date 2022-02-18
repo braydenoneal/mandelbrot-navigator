@@ -84,7 +84,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 	private MandelbrotNavigator() {
 		/* Frame */ {
-			frame.setTitle("Mandelbrot");
+			frame.setTitle("Mandelbrot Navigator");
 			frame.setContentPane(panelContent);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
@@ -411,7 +411,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		/* End */ {
 			frame.pack();
 			frame.setLocationRelativeTo(null);
-			// frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 			frame.setVisible(true);
 		}
 	}
@@ -424,7 +424,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		private double top = 0;
 		private double step = 0;
 
-		private final int numPasses = 1;
+		private final int numPasses = 16;
 		private int pass = numPasses;
 
 		@Override
@@ -439,7 +439,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			top = y + scale / 2;
 			step = scale / height;
 
-			IntStream.range(0, height / pass).parallel().forEach(y -> paintRow(y, g));
+			IntStream.range(0, height / pass).parallel().forEach(this::paintRow);
 
 			g.drawImage(image, 0, 0, null);
 
@@ -451,7 +451,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			}
 		}
 
-		void paintRow(int y, Graphics g) {
+		void paintRow(int y) {
 			for (int x = 0; x < width; x += pass) {
 				int value = MandelbrotMath.getMandelbrotValue(left + x * step + pass / 2.0 * step,
 						top - y * pass * step - pass / 2.0 * step, cycles, limit);
