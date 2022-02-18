@@ -82,81 +82,6 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	// - Export
 	private final JButton exportButtonSave = new JButton();
 
-	private class MainPanel extends JPanel {
-		private BufferedImage image;
-		private int width = 0;
-		private int height = 0;
-		private double left = 0;
-		private double top = 0;
-		private double step = 0;
-
-		@Override
-		protected void paintComponent(Graphics g) {
-			super.paintComponent(g);
-
-			width = getWidth();
-			height = getHeight();
-			image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-			left = x - (1.0 * width / height) * scale / 2;
-			top = y + scale / 2;
-			step = scale / height;
-
-			IntStream.range(0, height).parallel().forEach(this::paintRow);
-
-			g.drawImage(image, 0, 0, null);
-		}
-
-		void paintRow(int y) {
-			for (int x = 0; x < width; x++) {
-				int value = MandelbrotMath.getMandelbrotValue(
-						left + x * step, top - y * step, cycles, limit);
-				int[] rgb = Fire.getColor(value, cycles);
-				image.setRGB(x, y, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
-			}
-		}
-
-		public void exportPNG(String path) {
-			try {
-				ImageIO.write(image, "png", new File(path));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private static class Bookmark implements Serializable {
-		private final String name;
-		private final double x;
-		private final double y;
-		private final double scale;
-
-		public Bookmark(String name, double x, double y, double scale) {
-			this.name = name;
-			this.x = x;
-			this.y = y;
-			this.scale = scale;
-		}
-
-		@Override
-		public String toString() {
-			return "Bookmark{" + "name='" + name + '\'' + ", x=" + x + ", y=" + y + ", scale=" + scale + '}';
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (this == o) return true;
-			if (o == null || getClass() != o.getClass()) return false;
-			Bookmark bookmark = (Bookmark) o;
-			return Double.compare(bookmark.x, x) == 0 && Double.compare(bookmark.y, y) == 0 && Double.compare(bookmark.scale, scale) == 0 && Objects.equals(name, bookmark.name);
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(name, x, y, scale);
-		}
-	}
-
 	private MandelbrotNavigator() {
 		/* Frame */ {
 			frame.setTitle("Mandelbrot");
@@ -486,8 +411,108 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		/* End */ {
 			frame.pack();
 			frame.setLocationRelativeTo(null);
-			frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			// frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 			frame.setVisible(true);
+		}
+	}
+
+	private class MainPanel extends JPanel {
+		private BufferedImage image;
+		private int width = 0;
+		private int height = 0;
+		private double left = 0;
+		private double top = 0;
+		private double step = 0;
+
+		private final int numPasses = 16;
+		private int pass = numPasses;
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+			width = getWidth();
+			height = getHeight();
+			image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+			left = x - (1.0 * width / height) * scale / 2;
+			top = y + scale / 2;
+			step = scale / height;
+
+			IntStream.range(0, height / pass).parallel().forEach(this::paintScaledRow);
+
+			g.drawImage(image, 0, 0, null);
+
+			if (pass > 1) {
+				step *= pass;
+				pass--;
+				repaint();
+			} else {
+				pass = numPasses;
+			}
+		}
+
+		void paintRow(int y) {
+			for (int x = 0; x < width; x++) {
+				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
+				int[] rgb = Fire.getColor(value, cycles);
+				image.setRGB(x, y, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
+			}
+		}
+
+		void paintScaledRow(int y) {
+			for (int x = 0; x < width; x += pass) {
+				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
+				int[] rgb = Fire.getColor(value, cycles);
+
+				for (int py = 0; py < pass; py++) {
+					for (int px = 0; px < pass; px++) {
+						if (x + px < width && y + py < height) {
+							image.setRGB(x + px, y + py, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
+						}
+					}
+				}
+			}
+		}
+
+		public void exportPNG(String path) {
+			try {
+				ImageIO.write(image, "png", new File(path));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private static class Bookmark implements Serializable {
+		private final String name;
+		private final double x;
+		private final double y;
+		private final double scale;
+
+		public Bookmark(String name, double x, double y, double scale) {
+			this.name = name;
+			this.x = x;
+			this.y = y;
+			this.scale = scale;
+		}
+
+		@Override
+		public String toString() {
+			return "Bookmark{" + "name='" + name + '\'' + ", x=" + x + ", y=" + y + ", scale=" + scale + '}';
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Bookmark bookmark = (Bookmark) o;
+			return Double.compare(bookmark.x, x) == 0 && Double.compare(bookmark.y, y) == 0 && Double.compare(bookmark.scale, scale) == 0 && Objects.equals(name, bookmark.name);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, x, y, scale);
 		}
 	}
 
