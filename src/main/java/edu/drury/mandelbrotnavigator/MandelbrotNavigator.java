@@ -510,7 +510,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			top = y + scale / 2;
 			step = scale / height;
 
-			IntStream.range(0, height / pass).parallel().forEach(this::paintRow);
+			IntStream.range(0, (int) Math.ceil((double) height / pass)).parallel().forEach(this::paintRow);
 
 			g.drawImage(image, 0, 0, null);
 
