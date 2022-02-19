@@ -2,9 +2,16 @@ package edu.drury.mandelbrotnavigator.color;
 
 import java.awt.*;
 
-public class Fire {
-	private static final int NUM_PALETTES = 4;
-	private static final Color[] FIRE = {
+public class ColorGenerator {
+	public static final int NUM_PALETTES = 4;
+	public static final Color[] DEFAULT = {
+			new Color(0, 0, 143),
+			new Color(180, 180, 0),
+			new Color(255, 255, 0),
+			new Color(255, 0, 144),
+			new Color(0, 229, 30)
+	};
+	public static final Color[] FIRE = {
 			new Color(0, 0, 0),
 			new Color(255, 0, 0),
 			new Color(255, 255, 0),
@@ -13,7 +20,7 @@ public class Fire {
 			new Color(255, 0, 0),
 			new Color(0, 0, 0)
 	};
-	private static final Color[] RGB = {
+	public static final Color[] RGB = {
 			new Color(255, 0, 0),
 			new Color(255, 127, 0),
 			new Color(255, 255, 0),
@@ -23,24 +30,23 @@ public class Fire {
 			new Color(191, 0, 255),
 			new Color(255, 0, 0)
 	};
-	private static final Color[] DEFAULT = {
-			new Color(0, 0, 143),
-			new Color(180, 180, 0),
-			new Color(255, 255, 0),
-			new Color(255, 0, 144),
-			new Color(0, 229, 30)
+	public static final Color[] GOLD = {
+			new Color(59, 14, 2),
+			new Color(225, 119, 12),
+			new Color(255, 240, 139)
 	};
-	private static final Color[] COLORS = DEFAULT;
+	private Color[] PALETTE;
 
-	/** Prevent creating instances. */
-	private Fire() {}
+	public ColorGenerator(Color[] palette) {
+		this.PALETTE = palette;
+	}
 
-	public static int[] getColor(int value, int cycles) {
+	public int[] getColor(int value, int cycles) {
 		int paletteSectionLength = cycles / NUM_PALETTES;
 		int paletteValue = value - value / paletteSectionLength * paletteSectionLength;
-		int colorsSectionLength = paletteSectionLength / (COLORS.length - 1);
+		int colorsSectionLength = paletteSectionLength / (PALETTE.length - 1);
 
-		for (int i = 0; i < COLORS.length - 1; i++) {
+		for (int i = 0; i < PALETTE.length - 1; i++) {
 			int min = colorsSectionLength * i;
 			int max = colorsSectionLength * (i + 1);
 
@@ -48,8 +54,8 @@ public class Fire {
 				int colorSectionValue = paletteValue - paletteValue / colorsSectionLength * colorsSectionLength;
 				double ratio = (double) (colorSectionValue) / colorsSectionLength;
 
-				Color c1 = COLORS[i];
-				Color c2 = COLORS[i + 1];
+				Color c1 = PALETTE[i];
+				Color c2 = PALETTE[i + 1];
 
 				return new int[] {
 						(int) Math.round(ratio * (c2.getRed() - c1.getRed()) + c1.getRed()),
@@ -60,5 +66,9 @@ public class Fire {
 		}
 
 		return new int[] {0, 0, 0};
+	}
+
+	public void setPalette(Color[] PALETTE) {
+		this.PALETTE = PALETTE;
 	}
 }

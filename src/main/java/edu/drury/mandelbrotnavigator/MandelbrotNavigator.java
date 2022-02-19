@@ -1,6 +1,6 @@
 package edu.drury.mandelbrotnavigator;
 
-import edu.drury.mandelbrotnavigator.color.Fire;
+import edu.drury.mandelbrotnavigator.color.ColorGenerator;
 import edu.drury.mandelbrotnavigator.math.MandelbrotMath;
 
 import javax.imageio.ImageIO;
@@ -38,6 +38,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private int panelMainMousePressStartScreenY;
 	private double panelMainMousePressStartPosX;
 	private double panelMainMousePressStartPosY;
+
+	private final ColorGenerator colorGenerator = new ColorGenerator(ColorGenerator.DEFAULT);
 
 	// Level 0
 	private final JFrame frame = new JFrame();
@@ -311,10 +313,13 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			panelColors.setLayout(new GridBagLayout());
 			panelColors.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Colors"));
 
+			colorsComboBox.addItem("Default");
 			colorsComboBox.addItem("Fire");
 			colorsComboBox.addItem("RGB");
+			colorsComboBox.addItem("Gold");
 			colorsComboBox.setSelectedIndex(0);
-			// TODO: Retrieve colors combo box items dynamically
+			colorsComboBox.setActionCommand("colorsChanged");
+			colorsComboBox.addActionListener(this);
 
 			GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
@@ -521,7 +526,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			for (int x = 0; x < width; x += pass) {
 				int value = MandelbrotMath.getMandelbrotValue(left + x * step + pass / 2.0 * step,
 						top - y * pass * step - pass / 2.0 * step, cycles, limit);
-				int[] rgb = Fire.getColor(value, cycles);
+				int[] rgb = colorGenerator.getColor(value, cycles);
 
 				for (int py = 0; py < pass; py++) {
 					for (int px = 0; px < pass; px++) {
@@ -605,6 +610,22 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			positionFieldY.setValue(y);
 			generationFieldCycles.setValue(cycles);
 			panelMain.repaint();
+		}
+		// Colors
+		else if (e.getActionCommand().equals("colorsChanged")) {
+			if (Objects.equals(colorsComboBox.getSelectedItem(), "Default")) {
+				colorGenerator.setPalette(ColorGenerator.DEFAULT);
+				panelMain.repaint();
+			} else if (Objects.equals(colorsComboBox.getSelectedItem(), "Fire")) {
+				colorGenerator.setPalette(ColorGenerator.FIRE);
+				panelMain.repaint();
+			} else if (Objects.equals(colorsComboBox.getSelectedItem(), "RGB")) {
+				colorGenerator.setPalette(ColorGenerator.RGB);
+				panelMain.repaint();
+			} else if (Objects.equals(colorsComboBox.getSelectedItem(), "Gold")) {
+				colorGenerator.setPalette(ColorGenerator.GOLD);
+				panelMain.repaint();
+			}
 		}
 		// Generation
 		else if (e.getActionCommand().equals("generationReset")) {
