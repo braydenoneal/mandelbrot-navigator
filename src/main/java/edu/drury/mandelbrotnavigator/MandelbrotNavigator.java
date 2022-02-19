@@ -140,13 +140,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				public void mouseWheelMoved(MouseWheelEvent e) {
 					super.mouseWheelMoved(e);
 
+					double distToScreenEdgeX = scale / panelMain.height * panelMain.width / 2.0;
+					double distToScreenEdgeY = scale / 2.0;
+
 					int pxDistX = e.getX() - panelMain.width / 2;
 					int pxDistY = e.getY() - panelMain.height / 2;
 
 					double distX = scale / panelMain.height * pxDistX;
 					double distY = scale / panelMain.height * pxDistY;
-
-					double oldScale = scale;
 
 					if (e.getWheelRotation() > 0) {
 						scale *= 1.25;
@@ -154,8 +155,11 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 						scale *= 0.8;
 					}
 
-					double toMoveX = scale / oldScale * distX;
-					double toMoveY = scale / oldScale * distY;
+					double distToScreenEdgeAfterX = scale / panelMain.height * panelMain.width / 2.0;
+					double distToScreenEdgeAfterY = scale / 2.0;
+
+					double toMoveX = distX - (distX / distToScreenEdgeX * distToScreenEdgeAfterX);
+					double toMoveY = distY - (distY / distToScreenEdgeY * distToScreenEdgeAfterY);
 
 					x = x + toMoveX;
 					y = y - toMoveY;
