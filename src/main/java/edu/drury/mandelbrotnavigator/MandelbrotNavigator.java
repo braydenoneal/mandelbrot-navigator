@@ -39,7 +39,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private double panelMainMousePressStartPosX;
 	private double panelMainMousePressStartPosY;
 
-	private final ColorGenerator colorGenerator = new ColorGenerator(ColorGenerator.DEFAULT);
+	private final ColorGenerator colorGenerator = new ColorGenerator(ColorGenerator.FIRE);
 
 	// Level 0
 	private final JFrame frame = new JFrame();
@@ -86,12 +86,14 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private final JButton bookmarksButtonRename = new JButton();
 	// - Export
 	private final JButton exportButtonSave = new JButton();
+	private final JButton exportButtonSaveAdvanced = new JButton();
 
 	private MandelbrotNavigator() {
 		/* Frame */ {
 			frame.setTitle("Mandelbrot Navigator");
 			frame.setContentPane(panelContent);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setIconImage(Toolkit.getDefaultToolkit().getImage(new File("./icon.png").getPath()));
 		}
 
 		/* Content Panel */ {
@@ -317,7 +319,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			colorsComboBox.addItem("Fire");
 			colorsComboBox.addItem("RGB");
 			colorsComboBox.addItem("Gold");
-			colorsComboBox.setSelectedIndex(0);
+			colorsComboBox.setSelectedIndex(1);
 			colorsComboBox.setActionCommand("colorsChanged");
 			colorsComboBox.addActionListener(this);
 
@@ -468,6 +470,10 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			exportButtonSave.addActionListener(this);
 			exportButtonSave.setActionCommand("exportSave");
 
+			exportButtonSaveAdvanced.setText("Advanced export");
+			exportButtonSaveAdvanced.addActionListener(this);
+			exportButtonSaveAdvanced.setActionCommand("exportSaveAdvanced");
+
 			GridBagConstraints gridBagConstraints = new GridBagConstraints();
 
 			gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
@@ -477,6 +483,10 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			gridBagConstraints.gridy = 0;
 
 			panelExport.add(exportButtonSave, gridBagConstraints);
+
+			gridBagConstraints.gridy++;
+
+			panelExport.add(exportButtonSaveAdvanced, gridBagConstraints);
 		}
 
 		/* End */ {
@@ -497,6 +507,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 		private final int numPasses = 16;
 		private int pass = numPasses;
+
+		private BufferedImage exportImage;
 
 		@Override
 		protected void paintComponent(Graphics g) {
@@ -522,7 +534,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			}
 		}
 
-		void paintRow(int y) {
+		private void paintRow(int y) {
 			for (int x = 0; x < width; x += pass) {
 				int value = MandelbrotMath.getMandelbrotValue(left + x * step + pass / 2.0 * step,
 						top - y * pass * step - pass / 2.0 * step, cycles, limit);
@@ -549,6 +561,32 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				ImageIO.write(image, "png", new File(path));
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+		}
+
+		public void advancedExportCreatePNG(int width, int height) {
+			exportImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+			left = x - ((double) width / height) * scale / 2;
+			top = y + scale / 2;
+			double step = scale / height;
+
+			IntStream.range(0, height).parallel().forEach(row -> advancedExportPaintRow(row, width, left, top, step));
+		}
+
+		public void advancedExportPNG(String path) {
+			try {
+				ImageIO.write(exportImage, "png", new File(path));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		private void advancedExportPaintRow(int y, int width, double left, double top, double step) {
+			for (int x = 0; x < width; x++) {
+				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
+				int[] rgb = colorGenerator.getColor(value, cycles);
+				exportImage.setRGB(x, y, 0x10000 * rgb[0] + 0x100 * rgb[1] + rgb[2]);
 			}
 		}
 	}
@@ -705,6 +743,61 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				}
 				if (option == JFileChooser.APPROVE_OPTION && !name.equals(".png")) {
 					panelMain.exportPNG(path);
+				}
+			}
+		} else if (e.getActionCommand().equals("exportSaveAdvanced")) {
+			JFormattedTextField widthField = new JFormattedTextField(NumberFormat.getIntegerInstance()) {
+				@Override
+				protected void processFocusEvent(FocusEvent e) {
+					super.processFocusEvent(e);
+					if (e.isTemporary())
+						return;
+					SwingUtilities.invokeLater(this::selectAll);
+				}
+			};
+			widthField.setValue(panelMain.width);
+			JFormattedTextField heightField = new JFormattedTextField(NumberFormat.getIntegerInstance()) {
+				@Override
+				protected void processFocusEvent(FocusEvent e) {
+					super.processFocusEvent(e);
+					if (e.isTemporary())
+						return;
+					SwingUtilities.invokeLater(this::selectAll);
+				}
+			};
+			heightField.setValue(panelMain.height);
+			Object[] message = {
+					"Width: ", widthField,
+					"Height: ", heightField
+			};
+			int widthHeightOption = JOptionPane.showConfirmDialog(
+					null, message, "Advanced Export", JOptionPane.OK_CANCEL_OPTION);
+
+			if (widthHeightOption == JOptionPane.OK_OPTION) {
+				int width = ((Number) widthField.getValue()).intValue();
+				int height = ((Number) heightField.getValue()).intValue();
+
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileNameExtensionFilter("PNG", "png"));
+				fileChooser.setAcceptAllFileFilterUsed(false);
+				File exportsDir = new File("./exports");
+				boolean exportsDirExists = exportsDir.exists();
+				if (!exportsDirExists) {
+					exportsDirExists = exportsDir.mkdir();
+				}
+				if (exportsDirExists) {
+					fileChooser.setCurrentDirectory(new File("./exports"));
+					int option = fileChooser.showSaveDialog(frame);
+					String path = fileChooser.getSelectedFile().getPath();
+					String name = fileChooser.getSelectedFile().getName();
+					if (!name.endsWith(".png")) {
+						name += ".png";
+						path += ".png";
+					}
+					if (option == JFileChooser.APPROVE_OPTION && !name.equals(".png")) {
+						panelMain.advancedExportCreatePNG(width, height);
+						panelMain.advancedExportPNG(path);
+					}
 				}
 			}
 		}
