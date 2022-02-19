@@ -41,8 +41,8 @@ public class ColorGenerator {
 		this.PALETTE = palette;
 	}
 
-	public int[] getColor(int value, int cycles) {
-		int paletteSectionLength = cycles / NUM_PALETTES;
+	public int[] getColor(int value, int iterations) {
+		int paletteSectionLength = iterations / NUM_PALETTES;
 		int paletteValue = value - value / paletteSectionLength * paletteSectionLength;
 		int colorsSectionLength = paletteSectionLength / (PALETTE.length - 1);
 

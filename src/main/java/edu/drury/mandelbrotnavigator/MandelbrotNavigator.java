@@ -25,14 +25,12 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private static final double DEFAULT_X = -0.5;
 	private static final double DEFAULT_Y = 0;
 	private static final double DEFAULT_SCALE = 2.75;
-	private static final int DEFAULT_CYCLES = getCycles(DEFAULT_SCALE);
-	private static final double DEFAULT_LIMIT = 2.0;
+	private static final int DEFAULT_ITERATIONS = getIterations(DEFAULT_SCALE);
 
 	private double scale = DEFAULT_SCALE;
 	private double x = DEFAULT_X;
 	private double y = DEFAULT_Y;
-	private int cycles = DEFAULT_CYCLES;
-	private double limit = DEFAULT_LIMIT;
+	private int iterations = DEFAULT_ITERATIONS;
 
 	private int panelMainMousePressStartScreenX;
 	private int panelMainMousePressStartScreenY;
@@ -73,10 +71,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	// - Colors
 	private final JComboBox<String> colorsComboBox = new JComboBox<>();
 	// - Generation
-	private final JLabel generationLabelLimit = new JLabel();
-	private final JFormattedTextField generationFieldLimit = new JFormattedTextField();
-	private final JLabel generationLabelCycles = new JLabel();
-	private final JFormattedTextField generationFieldCycles = new JFormattedTextField();
+	private final JLabel generationLabelIterations = new JLabel();
+	private final JFormattedTextField generationFieldIterations = new JFormattedTextField();
 	private final JButton generationButtonReset = new JButton();
 	// - Bookmarks
 	private final JButton bookmarksButtonSave = new JButton();
@@ -170,9 +166,9 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 					positionFieldX.setValue(x);
 					positionFieldY.setValue(y);
-					setCycles();
+					setIterations();
 					positionFieldScale.setValue(scale);
-					generationFieldCycles.setValue(cycles);
+					generationFieldIterations.setValue(iterations);
 					panelMain.repaint();
 				}
 			});
@@ -338,19 +334,12 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			panelGeneration.setLayout(new GridBagLayout());
 			panelGeneration.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Generation"));
 
-			generationLabelLimit.setText("Limit:");
+			generationLabelIterations.setText("Iterations:");
 
-			generationFieldLimit.setFormatterFactory(
-					new DefaultFormatterFactory(new NumberFormatter(NumberFormat.getNumberInstance())));
-			generationFieldLimit.setValue(limit);
-			generationFieldLimit.addPropertyChangeListener("value", this);
-
-			generationLabelCycles.setText("Cycles:");
-
-			generationFieldCycles.setFormatterFactory(
+			generationFieldIterations.setFormatterFactory(
 					new DefaultFormatterFactory(new NumberFormatter(NumberFormat.getIntegerInstance())));
-			generationFieldCycles.setValue(cycles);
-			generationFieldCycles.addPropertyChangeListener("value", this);
+			generationFieldIterations.setValue(iterations);
+			generationFieldIterations.addPropertyChangeListener("value", this);
 
 			generationButtonReset.setText("Reset");
 			generationButtonReset.setActionCommand("generationReset");
@@ -364,23 +353,12 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			gridBagConstraints.gridx = 0;
 			gridBagConstraints.gridy = 0;
 
-			panelGeneration.add(generationLabelLimit, gridBagConstraints);
+			panelGeneration.add(generationLabelIterations, gridBagConstraints);
 
 			gridBagConstraints.weightx = 1.0;
 			gridBagConstraints.gridx = 1;
 
-			panelGeneration.add(generationFieldLimit, gridBagConstraints);
-
-			gridBagConstraints.weightx = 0.0;
-			gridBagConstraints.gridx = 0;
-			gridBagConstraints.gridy++;
-
-			panelGeneration.add(generationLabelCycles, gridBagConstraints);
-
-			gridBagConstraints.weightx = 1.0;
-			gridBagConstraints.gridx = 1;
-
-			panelGeneration.add(generationFieldCycles, gridBagConstraints);
+			panelGeneration.add(generationFieldIterations, gridBagConstraints);
 
 			gridBagConstraints.gridwidth = 2;
 			gridBagConstraints.gridx = 0;
@@ -537,8 +515,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		private void paintRow(int y) {
 			for (int x = 0; x < width; x += pass) {
 				int value = MandelbrotMath.getMandelbrotValue(left + x * step + pass / 2.0 * step,
-						top - y * pass * step - pass / 2.0 * step, cycles, limit);
-				int[] rgb = colorGenerator.getColor(value, cycles);
+						top - y * pass * step - pass / 2.0 * step, iterations);
+				int[] rgb = colorGenerator.getColor(value, iterations);
 
 				for (int py = 0; py < pass; py++) {
 					for (int px = 0; px < pass; px++) {
@@ -584,8 +562,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 
 		private void advancedExportPaintRow(int y, int width, double left, double top, double step) {
 			for (int x = 0; x < width; x++) {
-				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, cycles, limit);
-				int[] rgb = colorGenerator.getColor(value, cycles);
+				int value = MandelbrotMath.getMandelbrotValue(left + x * step, top - y * step, iterations);
+				int[] rgb = colorGenerator.getColor(value, iterations);
 				exportImage.setRGB(x, y, 0x10000 * rgb[0] + 0x100 * rgb[1] + rgb[2]);
 			}
 		}
@@ -628,25 +606,25 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		// Position
 		if (e.getActionCommand().equals("positionZoomIn")) {
 			scale *= 0.8;
-			setCycles();
+			setIterations();
 			positionFieldScale.setValue(scale);
-			generationFieldCycles.setValue(cycles);
+			generationFieldIterations.setValue(iterations);
 			panelMain.repaint();
 		} else if (e.getActionCommand().equals("positionZoomOut")) {
 			scale *= 1.25;
-			setCycles();
+			setIterations();
 			positionFieldScale.setValue(scale);
-			generationFieldCycles.setValue(cycles);
+			generationFieldIterations.setValue(iterations);
 			panelMain.repaint();
 		} else if (e.getActionCommand().equals("positionReset")) {
 			scale = DEFAULT_SCALE;
 			x = DEFAULT_X;
 			y = DEFAULT_Y;
-			cycles = DEFAULT_CYCLES;
+			iterations = DEFAULT_ITERATIONS;
 			positionFieldScale.setValue(scale);
 			positionFieldX.setValue(x);
 			positionFieldY.setValue(y);
-			generationFieldCycles.setValue(cycles);
+			generationFieldIterations.setValue(iterations);
 			panelMain.repaint();
 		}
 		// Colors
@@ -667,8 +645,8 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		}
 		// Generation
 		else if (e.getActionCommand().equals("generationReset")) {
-			limit = DEFAULT_LIMIT;
-			generationFieldLimit.setValue(limit);
+			setIterations();
+			generationFieldIterations.setValue(iterations);
 			panelMain.repaint();
 		}
 		// Bookmarks
@@ -815,16 +793,13 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 			panelMain.repaint();
 		} else if (source == positionFieldScale) {
 			scale = ((Number) positionFieldScale.getValue()).doubleValue();
-			setCycles();
-			generationFieldCycles.setValue(cycles);
+			setIterations();
+			generationFieldIterations.setValue(iterations);
 			panelMain.repaint();
 		}
 		// Generation
-		else if (source == generationFieldLimit) {
-			limit = ((Number) generationFieldLimit.getValue()).doubleValue();
-			panelMain.repaint();
-		} else if (source == generationFieldCycles) {
-			cycles = ((Number) generationFieldCycles.getValue()).intValue();
+		else if (source == generationFieldIterations) {
+			iterations = ((Number) generationFieldIterations.getValue()).intValue();
 			panelMain.repaint();
 		}
 	}
@@ -885,11 +860,11 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 		}
 	}
 
-	private void setCycles() {
-		cycles = getCycles(scale);
+	private void setIterations() {
+		iterations = getIterations(scale);
 	}
 
-	private static int getCycles(double scale) {
+	private static int getIterations(double scale) {
 		return Math.max(128, Math.min((int) (1 / scale * 512), 1024));
 	}
 

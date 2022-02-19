@@ -4,16 +4,15 @@ public class MandelbrotMath {
 	/** Prevent creating instances. */
 	private MandelbrotMath() {}
 
-	public static int getMandelbrotValue(double a, double b, int cycles, double limit) {
-		double limitSquared = limit * limit;
+	public static int getMandelbrotValue(double a, double b, int iterations) {
 		double x = a;
 		double y = b;
 
-		for (int i = 0; i < cycles; i++) {
+		for (int i = 0; i < iterations; i++) {
 			double px = x;
 			x = px * px - y * y + a;
 			y = (px + px) * y + b;
-			if (x * x + y * y > limitSquared) {
+			if (x * x + y * y > 4) {
 				return i;
 			}
 		}
