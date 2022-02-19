@@ -34,6 +34,11 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private int cycles = DEFAULT_CYCLES;
 	private double limit = DEFAULT_LIMIT;
 
+	private int panelMainMousePressStartScreenX;
+	private int panelMainMousePressStartScreenY;
+	private double panelMainMousePressStartPosX;
+	private double panelMainMousePressStartPosY;
+
 	// Level 0
 	private final JFrame frame = new JFrame();
 	// Level 1
@@ -73,11 +78,10 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	private final JButton generationButtonReset = new JButton();
 	// - Bookmarks
 	private final JButton bookmarksButtonSave = new JButton();
+	private final JList<Bookmark> bookmarksList = new JList<>();
 	private final JButton bookmarksButtonGoTo = new JButton();
 	private final JButton bookmarksButtonDelete = new JButton();
 	private final JButton bookmarksButtonRename = new JButton();
-
-	private final JList<Bookmark> bookmarksList = new JList<>();
 	// - Export
 	private final JButton exportButtonSave = new JButton();
 
@@ -112,19 +116,22 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				@Override
 				public void mousePressed(MouseEvent e) {
 					super.mousePressed(e);
-					if (e.getButton() == 1) {
-						// TODO: Create shape or whatever
-						System.out.println("Zoom shape: " + e.getButton());
-					} else if (e.getButton() < 4) {
-						// TODO: Move position around cursor
-						System.out.println("Move position: " + e.getButton());
-					}
+					panelMainMousePressStartScreenX = e.getX();
+					panelMainMousePressStartScreenY = e.getY();
+					panelMainMousePressStartPosX = x;
+					panelMainMousePressStartPosY = y;
 				}
+			});
 
+			panelMain.addMouseMotionListener(new MouseAdapter() {
 				@Override
-				public void mouseReleased(MouseEvent e) {
-					super.mouseReleased(e);
-					System.out.println("Mouse Released");
+				public void mouseDragged(MouseEvent e) {
+					super.mouseDragged(e);
+					x = panelMainMousePressStartPosX - (e.getX() - panelMainMousePressStartScreenX) * (scale / panelMain.height);
+					y = panelMainMousePressStartPosY + (e.getY() - panelMainMousePressStartScreenY) * (scale / panelMain.height);
+					positionFieldX.setValue(x);
+					positionFieldY.setValue(y);
+					panelMain.repaint();
 				}
 			});
 
@@ -132,12 +139,29 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				@Override
 				public void mouseWheelMoved(MouseWheelEvent e) {
 					super.mouseWheelMoved(e);
-					// TODO: Create zoom in/out method to use in mouse wheel and button actions
+
+					int pxDistX = e.getX() - panelMain.width / 2;
+					int pxDistY = e.getY() - panelMain.height / 2;
+
+					double distX = scale / panelMain.height * pxDistX;
+					double distY = scale / panelMain.height * pxDistY;
+
+					double oldScale = scale;
+
 					if (e.getWheelRotation() > 0) {
 						scale *= 1.25;
 					} else {
 						scale *= 0.8;
 					}
+
+					double toMoveX = scale / oldScale * distX;
+					double toMoveY = scale / oldScale * distY;
+
+					x = x + toMoveX;
+					y = y - toMoveY;
+
+					positionFieldX.setValue(x);
+					positionFieldY.setValue(y);
 					setCycles();
 					positionFieldScale.setValue(scale);
 					generationFieldCycles.setValue(cycles);
@@ -498,7 +522,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 				for (int py = 0; py < pass; py++) {
 					for (int px = 0; px < pass; px++) {
 						if (x + px < width && y * pass + py < height) {
-							image.setRGB(x + px, y * pass + py, new Color(rgb[0], rgb[1], rgb[2]).getRGB());
+							image.setRGB(x + px, y * pass + py, 0x10000 * rgb[0] + 0x100 * rgb[1] + rgb[2]);
 						}
 					}
 				}
@@ -748,7 +772,7 @@ public class MandelbrotNavigator implements ActionListener, PropertyChangeListen
 	}
 
 	private static int getCycles(double scale) {
-		return Math.min((int) (1 / scale * 500), 1000);
+		return Math.max(128, Math.min((int) (1 / scale * 512), 1024));
 	}
 
 	public static void main(String[] args) {
