@@ -37,6 +37,10 @@ public class ColorGenerator {
 	};
 	private Color[] PALETTE;
 
+	public ColorGenerator() {
+		this.PALETTE = DEFAULT;
+	}
+
 	public ColorGenerator(Color[] palette) {
 		this.PALETTE = palette;
 	}
@@ -51,7 +55,8 @@ public class ColorGenerator {
 			int max = colorsSectionLength * (i + 1);
 
 			if (paletteValue >= min && paletteValue < max) {
-				int colorSectionValue = paletteValue - paletteValue / colorsSectionLength * colorsSectionLength;
+				int colorSectionValue = paletteValue - paletteValue
+						/ Math.max(paletteSectionLength * paletteSectionLength, 1);
 				double ratio = (double) (colorSectionValue) / colorsSectionLength;
 
 				Color c1 = PALETTE[i];
