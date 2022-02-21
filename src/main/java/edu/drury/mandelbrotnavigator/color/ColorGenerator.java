@@ -37,17 +37,13 @@ public class ColorGenerator {
 	};
 	private Color[] PALETTE;
 
-	public ColorGenerator() {
-		this.PALETTE = DEFAULT;
-	}
-
 	public ColorGenerator(Color[] palette) {
 		this.PALETTE = palette;
 	}
 
 	public int[] getColor(int value, int iterations) {
 		int paletteSectionLength = iterations / NUM_PALETTES;
-		int paletteValue = value - value / Math.max(paletteSectionLength * paletteSectionLength, 1);
+		int paletteValue = value - value / Math.max(paletteSectionLength, 1) * paletteSectionLength;
 		int colorsSectionLength = paletteSectionLength / (PALETTE.length - 1);
 
 		for (int i = 0; i < PALETTE.length - 1; i++) {
