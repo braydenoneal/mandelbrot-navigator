@@ -47,7 +47,7 @@ public class ColorGenerator {
 
 	public int[] getColor(int value, int iterations) {
 		int paletteSectionLength = iterations / NUM_PALETTES;
-		int paletteValue = value - value / paletteSectionLength * paletteSectionLength;
+		int paletteValue = value - value / Math.max(paletteSectionLength * paletteSectionLength, 1);
 		int colorsSectionLength = paletteSectionLength / (PALETTE.length - 1);
 
 		for (int i = 0; i < PALETTE.length - 1; i++) {
@@ -55,8 +55,7 @@ public class ColorGenerator {
 			int max = colorsSectionLength * (i + 1);
 
 			if (paletteValue >= min && paletteValue < max) {
-				int colorSectionValue = paletteValue - paletteValue
-						/ Math.max(paletteSectionLength * paletteSectionLength, 1);
+				int colorSectionValue = paletteValue - paletteValue / colorsSectionLength * colorsSectionLength;
 				double ratio = (double) (colorSectionValue) / colorsSectionLength;
 
 				Color c1 = PALETTE[i];
