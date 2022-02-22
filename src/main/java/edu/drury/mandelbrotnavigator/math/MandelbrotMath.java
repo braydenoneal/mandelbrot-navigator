@@ -5,8 +5,8 @@ public class MandelbrotMath {
 	private MandelbrotMath() {}
 
 	public static int getMandelbrotValue(double a, double b, int iterations) {
-		double x = 0;
-		double y = 0;
+		double x = a;
+		double y = b;
 
 		for (int i = 0; i < iterations; i++) {
 			double px = x;
